@@ -28,8 +28,8 @@ class DatabaseManager:
             CREATE TABLE IF NOT EXISTS patients (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT NOT NULL,
-                age INTEGER,
-                gender TEXT,
+                image_name TEXT ,
+                disease TEXT ,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         ''')
