@@ -36,18 +36,18 @@ class HealthcareMainWindow(QMainWindow):
         self.setStatusBar(StatusBar(self))
     
 
-def closeEvent(self, event):
-    from PyQt6.QtWidgets import QMessageBox
-    
-    reply = QMessageBox.question(
-        self, 
-        'Exit Application',
-        'Are you sure you want to quit?',
-        QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-        QMessageBox.StandardButton.No
-    )
-    
-    if reply == QMessageBox.StandardButton.Yes:
-        event.accept()
-    else:
-        event.ignore()
+    def closeEvent(self, event):
+        from PyQt6.QtWidgets import QMessageBox
+        
+        reply = QMessageBox.question(
+            self, 
+            'Exit Application',
+            'Are you sure you want to quit?',
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No
+        )
+        
+        if reply == QMessageBox.StandardButton.Yes:
+            event.accept()
+        else:
+            event.ignore()
