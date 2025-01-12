@@ -140,74 +140,6 @@ class DataLoadingTab(QWidget):
         else:
             QMessageBox.critical(self, "Error", "Failed to connect to database!")
 
-    # def insert_data(self):
-    #     try:
-    #         # Fetch table schema dynamically
-    #         self.db.cursor.execute("PRAGMA table_info(patients)")
-    #         columns = self.db.cursor.fetchall()
-            
-    #         if not columns:
-    #             QMessageBox.warning(self, "Warning", "No columns found in the 'patients' table.")
-    #             return
-            
-    #         # Open a custom dialog for data input
-    #         dialog = QDialog(self)
-    #         dialog.setWindowTitle("Insert New Data")
-            
-    #         form_layout = QFormLayout(dialog)
-    #         input_fields = {}
-            
-    #         # Create input fields for each column except auto-handled ones
-    #         for column in columns:
-    #             col_name = column[1]
-    #             col_type = column[2]
-    #             default_value = column[4]  # Default value for the column
-                
-    #             # Skip auto-handled columns (id and created_at)
-    #             if col_name in ["id", "created_at"]:
-    #                 continue
-                
-    #             # Create a QLineEdit for each column
-    #             input_field = QLineEdit()
-    #             if default_value is not None:
-    #                 input_field.setPlaceholderText(f"Default: {default_value}")
-                
-    #             # Save the input field for later reference
-    #             input_fields[col_name] = input_field
-    #             form_layout.addRow(col_name, input_field)
-            
-    #         # Add buttons for submission
-    #         button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
-    #         button_box.accepted.connect(dialog.accept)
-    #         button_box.rejected.connect(dialog.reject)
-    #         form_layout.addWidget(button_box)
-            
-    #         # Show dialog
-    #         if dialog.exec():
-    #             # Collect data from fields
-    #             data = {col: field.text() for col, field in input_fields.items()}
-                
-    #             # Filter out empty fields
-    #             filtered_data = {k: v for k, v in data.items() if v.strip() != ""}
-                
-    #             # Prepare and execute the insert query
-    #             placeholders = ", ".join(["?"] * len(filtered_data))
-    #             column_names = ", ".join(filtered_data.keys())
-    #             query = f"INSERT INTO patients ({column_names}) VALUES ({placeholders})"
-                
-    #             # Execute query
-    #             self.db.cursor.execute(query, tuple(filtered_data.values()))
-    #             self.db.connection.commit()
-                
-    #             QMessageBox.information(self, "Success", "Data inserted successfully!")
-    #             # self.retrieve_data()  # Refresh the table view
-    #         else:
-    #             QMessageBox.information(self, "Info", "Insertion canceled.")
-        
-    #     except sqlite3.Error as e:
-    #         QMessageBox.critical(self, "Error", f"Failed to insert data: {str(e)}")
-
-
 
   
     def insert_data(self):
@@ -252,77 +184,7 @@ class DataLoadingTab(QWidget):
         except sqlite3.Error as e:
             QMessageBox.critical(self, "Error", f"Failed to insert data: {str(e)}")
 
-    # def retrieve_data(self):
-    #     try:
-    #         # Open a dialog to get filter criteria
-    #         dialog = QDialog(self)
-    #         dialog.setWindowTitle("Retrieve Data with Filters")
-            
-    #         form_layout = QFormLayout(dialog)
-    #         filter_fields = {}
-            
-    #         # Define filter fields for 'id' and 'name'
-    #         filter_fields['id'] = QLineEdit()
-    #         filter_fields['name'] = QLineEdit()
-            
-    #         form_layout.addRow("ID (Leave blank for no filter):", filter_fields['id'])
-    #         form_layout.addRow("Name (Leave blank for no filter):", filter_fields['name'])
-            
-    #         # Add buttons for submission
-    #         button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
-    #         button_box.accepted.connect(dialog.accept)
-    #         button_box.rejected.connect(dialog.reject)
-    #         form_layout.addWidget(button_box)
-            
-    #         # Show dialog
-    #         if dialog.exec():
-    #             # Collect filter values
-    #             id_filter = filter_fields['id'].text().strip()
-    #             name_filter = filter_fields['name'].text().strip()
-
-    #                         # Check if both fields are blank
-    #             if not id_filter and not name_filter:
-    #                 QMessageBox.information(self, "Info", "No filters provided. Retrieving all data.")
-                
-                    
-    #             # Construct the query with filters
-    #             query = "SELECT * FROM patients WHERE 1=1"  # 1=1 ensures the query is always valid
-    #             params = []
-                
-    #             if id_filter:
-    #                 query += " AND id = ?"
-    #                 params.append(id_filter)
-                
-    #             if name_filter:
-    #                 query += " AND image_name LIKE ?"
-    #                 params.append(f"%{name_filter}%")
-                
-    #             # Execute the query
-    #             self.db.cursor.execute(query, params)
-    #             data = self.db.cursor.fetchall()
-                
-    #             # Get column names
-    #             columns = [description[0] for description in self.db.cursor.description]
-                
-    #             # Set up the table
-    #             self.table.setRowCount(len(data))
-    #             self.table.setColumnCount(len(columns))
-    #             self.table.setHorizontalHeaderLabels(columns)
-                
-    #             # Fill table with data
-    #             for row_idx, row_data in enumerate(data):
-    #                 for col_idx, value in enumerate(row_data):
-    #                     self.table.setItem(row_idx, col_idx, QTableWidgetItem(str(value)))
-                        
-    #             self.table.resizeColumnsToContents()
-            
-    #         else:
-    #             QMessageBox.information(self, "Info", "Data retrieval canceled.")
-        
-    #     except sqlite3.Error as e:
-    #         QMessageBox.critical(self, "Error", f"Failed to retrieve data: {str(e)}")
-
-
+    
     def retrieve_data(self):
         try:
             # Open a dialog to get filter criteria
@@ -447,6 +309,125 @@ class DataLoadingTab(QWidget):
                     
                     dialog.exec()
 
+    # def update_data(self):
+    #     try:
+    #         # Open a dialog to get search criteria (id or name)
+    #         search_dialog = QDialog(self)
+    #         search_dialog.setWindowTitle("Search for Data to Update")
+            
+    #         search_layout = QFormLayout(search_dialog)
+    #         search_fields = {}
+            
+    #         # Define search fields for 'id' and 'name'
+    #         search_fields['patient_id'] = QLineEdit()
+    #         search_fields['patient_name'] = QLineEdit()
+            
+    #         search_layout.addRow("ID (Leave blank for no filter):", search_fields['patient_id'])
+    #         search_layout.addRow("Name (Leave blank for no filter):", search_fields['patient_name'])
+            
+    #         # Add buttons for submission
+    #         button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+    #         button_box.accepted.connect(search_dialog.accept)
+    #         button_box.rejected.connect(search_dialog.reject)
+    #         search_layout.addWidget(button_box)
+            
+    #         # Show dialog
+    #         if search_dialog.exec():
+    #             # Collect search values
+    #             id_filter = search_fields['id'].text().strip()
+    #             name_filter = search_fields['name'].text().strip()
+                
+    #             # Construct the search query
+    #             query = "SELECT * FROM patients WHERE 1=1"
+    #             params = []
+                
+    #             if id_filter:
+    #                 query += " AND id = ?"
+    #                 params.append(id_filter)
+                
+    #             if name_filter:
+    #                 query += " AND name LIKE ?"
+    #                 params.append(f"%{name_filter}%")
+                
+    #             # Execute the search query
+    #             self.db.cursor.execute(query, params)
+    #             data = self.db.cursor.fetchall()
+                
+    #             if not data:
+    #                 QMessageBox.information(self, "Info", "No matching records found.")
+    #                 return
+                
+    #             # Display matching records to confirm
+    #             record_info = "\n".join([", ".join(map(str, row)) for row in data])
+    #             QMessageBox.information(self, "Matching Records", f"Found the following records:\n\n{record_info}")
+                
+    #             # Open a dialog to get update values
+    #             update_dialog = QDialog(self)
+    #             update_dialog.setWindowTitle("Update Data")
+                
+    #             update_layout = QFormLayout(update_dialog)
+    #             update_fields = {}
+                
+    #             # Define update fields for 'name', 'age', and 'gender'
+    #             update_fields['patient_name'] = QLineEdit()
+    #             update_fields['patient_age'] = QLineEdit()
+    #             update_fields['patient_gender'] = QLineEdit()
+    #             update_fields['patient_contact'] = QLineEdit()
+    #             update_fields['patient_image'] = QLineEdit()
+                
+    #             update_layout.addRow("New Name (Leave blank to keep current):", update_fields['patient_name'])
+    #             update_layout.addRow("image_name (Leave blank to keep current):", update_fields['patient_age'])
+    #             update_layout.addRow("disease (Leave blank to keep current):", update_fields['patient_gender'])
+    #             update_layout.addRow("disease (Leave blank to keep current):", update_fields['patient_contact'])
+    #             update_layout.addRow("disease (Leave blank to keep current):", update_fields['patient_image'])
+                
+    #             # Add buttons for submission
+    #             update_button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+    #             update_button_box.accepted.connect(update_dialog.accept)
+    #             update_button_box.rejected.connect(update_dialog.reject)
+    #             update_layout.addWidget(update_button_box)
+                
+    #             # Show update dialog
+    #             if update_dialog.exec():
+    #                 # Collect update values
+    #                 update_values = {field: update_fields[field].text().strip() for field in update_fields}
+                    
+    #                 # Construct the update query
+    #                 update_query = "UPDATE patients SET "
+    #                 update_params = []
+                    
+    #                 for field, value in update_values.items():
+    #                     if value:  # Only include non-empty fields
+    #                         update_query += f"{field} = ?, "
+    #                         update_params.append(value)
+                    
+    #                 # Remove trailing comma and space
+    #                 update_query = update_query.rstrip(", ")
+                    
+    #                 # Add WHERE clause to the query
+    #                 update_query += " WHERE 1=1"
+    #                 if id_filter:
+    #                     update_query += " AND id = ?"
+    #                     update_params.append(id_filter)
+    #                 if name_filter:
+    #                     update_query += " AND name LIKE ?"
+    #                     update_params.append(f"%{name_filter}%")
+                    
+    #                 # Execute the update query
+    #                 self.db.cursor.execute(update_query, update_params)
+    #                 self.db.connection.commit()
+                    
+    #                 QMessageBox.information(self, "Success", "Data updated successfully!")
+    #                 # self.retrieve_data()  # Refresh the view
+    #             else:
+    #                 QMessageBox.information(self, "Info", "Update canceled.")
+    #         else:
+    #             QMessageBox.information(self, "Info", "Search canceled.")
+        
+    #     except sqlite3.Error as e:
+    #         QMessageBox.critical(self, "Error", f"Failed to update data: {str(e)}")
+
+
     def update_data(self):
         try:
             # Open a dialog to get search criteria (id or name)
@@ -457,11 +438,11 @@ class DataLoadingTab(QWidget):
             search_fields = {}
             
             # Define search fields for 'id' and 'name'
-            search_fields['id'] = QLineEdit()
-            search_fields['name'] = QLineEdit()
+            search_fields['patient_id'] = QLineEdit()
+            search_fields['patient_name'] = QLineEdit()
             
-            search_layout.addRow("ID (Leave blank for no filter):", search_fields['id'])
-            search_layout.addRow("Name (Leave blank for no filter):", search_fields['name'])
+            search_layout.addRow("Patient ID (Leave blank for no filter):", search_fields['patient_id'])
+            search_layout.addRow("Patient Name (Leave blank for no filter):", search_fields['patient_name'])
             
             # Add buttons for submission
             button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
@@ -472,19 +453,19 @@ class DataLoadingTab(QWidget):
             # Show dialog
             if search_dialog.exec():
                 # Collect search values
-                id_filter = search_fields['id'].text().strip()
-                name_filter = search_fields['name'].text().strip()
+                id_filter = search_fields['patient_id'].text().strip()
+                name_filter = search_fields['patient_name'].text().strip()
                 
                 # Construct the search query
                 query = "SELECT * FROM patients WHERE 1=1"
                 params = []
                 
                 if id_filter:
-                    query += " AND id = ?"
+                    query += " AND patient_id = ?"
                     params.append(id_filter)
                 
                 if name_filter:
-                    query += " AND name LIKE ?"
+                    query += " AND patient_name LIKE ?"
                     params.append(f"%{name_filter}%")
                 
                 # Execute the search query
@@ -507,13 +488,26 @@ class DataLoadingTab(QWidget):
                 update_fields = {}
                 
                 # Define update fields for 'name', 'age', and 'gender'
-                update_fields['name'] = QLineEdit()
-                update_fields['image_name'] = QLineEdit()
-                update_fields['disease'] = QLineEdit()
+                update_fields['patient_name'] = QLineEdit()
+                update_fields['patient_age'] = QLineEdit()
+                update_fields['patient_gender'] = QLineEdit()
+                update_fields['patient_contact'] = QLineEdit()
+                update_fields['patient_image'] = QLineEdit()
                 
-                update_layout.addRow("New Name (Leave blank to keep current):", update_fields['name'])
-                update_layout.addRow("image_name (Leave blank to keep current):", update_fields['image_name'])
-                update_layout.addRow("disease (Leave blank to keep current):", update_fields['disease'])
+                # Pre-fill current values
+                current_data = data[0]  # Assuming we want to update the first matched record
+                update_fields['patient_name'].setText(current_data[1])  # Assuming patient_name is at index 1
+                update_fields['patient_age'].setText(str(current_data[2]))  # Assuming patient_age is at index 2
+                update_fields['patient_gender'].setText(current_data[3])  # Assuming patient_gender is at index 3
+                update_fields['patient_contact'].setText(current_data[4])  # Assuming patient_contact is at index 4
+                update_fields['patient_image'].setText(current_data[5] if current_data[5] else "")  # Assuming patient_image is at index 5
+                
+                # Add rows for each update field
+                update_layout.addRow("New Name (Leave blank to keep current):", update_fields['patient_name'])
+                update_layout.addRow("New Age (Leave blank to keep current):", update_fields['patient_age'])
+                update_layout.addRow("New Gender (Leave blank to keep current):", update_fields['patient_gender'])
+                update_layout.addRow("New Contact (Leave blank to keep current):", update_fields['patient_contact'])
+                # update_layout.addRow("New Image (Leave blank to keep current):", update_fields['patient_image'])
                 
                 # Add buttons for submission
                 update_button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
@@ -539,20 +533,15 @@ class DataLoadingTab(QWidget):
                     update_query = update_query.rstrip(", ")
                     
                     # Add WHERE clause to the query
-                    update_query += " WHERE 1=1"
-                    if id_filter:
-                        update_query += " AND id = ?"
-                        update_params.append(id_filter)
-                    if name_filter:
-                        update_query += " AND name LIKE ?"
-                        update_params.append(f"%{name_filter}%")
+                    update_query += " WHERE patient_id = ?"
+                    update_params.append(id_filter)  # Assuming we are updating by patient_id
                     
                     # Execute the update query
                     self.db.cursor.execute(update_query, update_params)
                     self.db.connection.commit()
                     
                     QMessageBox.information(self, "Success", "Data updated successfully!")
-                    # self.retrieve_data()  # Refresh the view
+                    self.retrieve_data()  # Refresh the view to reflect the update
                 else:
                     QMessageBox.information(self, "Info", "Update canceled.")
             else:
@@ -561,7 +550,6 @@ class DataLoadingTab(QWidget):
         except sqlite3.Error as e:
             QMessageBox.critical(self, "Error", f"Failed to update data: {str(e)}")
 
-        
     def delete_data(self):
         try:
             # Open a dialog to get search criteria (id or image_name)
@@ -572,11 +560,11 @@ class DataLoadingTab(QWidget):
             search_fields = {}
             
             # Define search fields for 'id' and 'image_name'
-            search_fields['id'] = QLineEdit()
-            search_fields['image_name'] = QLineEdit()
+            search_fields['patient_id'] = QLineEdit()
+            search_fields['patient_name'] = QLineEdit()
             
-            search_layout.addRow("ID (Leave blank for no filter):", search_fields['id'])
-            search_layout.addRow("Image Name (Leave blank for no filter):", search_fields['image_name'])
+            search_layout.addRow("ID (Leave blank for no filter):", search_fields['patient_id'])
+            search_layout.addRow("Image Name (Leave blank for no filter):", search_fields['patient_name'])
             
             # Add buttons for submission
             button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
@@ -587,8 +575,8 @@ class DataLoadingTab(QWidget):
             # Show dialog
             if search_dialog.exec():
                 # Collect search values
-                id_filter = search_fields['id'].text().strip()
-                image_name_filter = search_fields['image_name'].text().strip()
+                id_filter = search_fields['patient_id'].text().strip()
+                image_name_filter = search_fields['patient_name'].text().strip()
                 
                 # Construct the search query
                 query = "SELECT * FROM patients WHERE 1=1"

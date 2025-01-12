@@ -15,7 +15,7 @@ class TabWidget(QTabWidget):
     def setup_tabs(self):
         self.addTab(WelcomeTab(), "Welcome")
         self.addTab(DataLoadingTab(), "Data Loading")
+        self.addTab(ImageProcessingTab(), "Image Processing")
         self.addTab(HealthAnalysisTab(), "Health Analysis")
         self.addTab(SpectrumAnalysisTab(), "Spectrum Analysis")
-        self.addTab(ImageProcessingTab(), "Image Processing")
         self.addTab(VisualizationTab(), "Visualization")
