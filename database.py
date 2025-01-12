@@ -26,10 +26,12 @@ class DatabaseManager:
     def create_tables(self):
         self.cursor.execute('''
             CREATE TABLE IF NOT EXISTS patients (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL,
-                image_name TEXT ,
-                disease TEXT ,
+                patient_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                patient_name TEXT NOT NULL,
+                patient_age INTEGER,
+                patient_gender TEXT,
+                patient_contact TEXT,
+                patient_image TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         ''')

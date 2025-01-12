@@ -2,6 +2,7 @@
 from PyQt6.QtWidgets import QMenuBar, QMessageBox, QDialog, QVBoxLayout, QLabel, QTextBrowser
 from PyQt6.QtGui import QAction, QIcon
 from PyQt6.QtCore import Qt
+from tab_widget import TabWidget
 
 class HelpDialog(QDialog):
     def __init__(self, title, content, parent=None):
