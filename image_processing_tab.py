@@ -1,7 +1,10 @@
+# image_processing_tab.py
+
 import cv2
 import numpy as np
+import os
 from PyQt6.QtWidgets import (QWidget, QHBoxLayout, QVBoxLayout, QPushButton, 
-                            QLabel, QGroupBox, QComboBox, QFileDialog)
+                            QLabel, QGroupBox, QComboBox, QFileDialog, QMessageBox)
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QImage, QPixmap
 
@@ -11,6 +14,11 @@ class ImageProcessingTab(QWidget):
         self.original_image = None
         self.current_image = None
         self.setup_ui()
+        
+        # Create processed_images directory if it doesn't exist
+        self.output_dir = "processed_images"
+        if not os.path.exists(self.output_dir):
+            os.makedirs(self.output_dir)
     
     def setup_ui(self):
         main_layout = QHBoxLayout(self)
@@ -47,6 +55,12 @@ class ImageProcessingTab(QWidget):
         ])
         self.method_combo.currentTextChanged.connect(self.process_image)
         center_layout.addWidget(self.method_combo)
+        
+        # Add Save Button
+        self.save_button = QPushButton("Save Processed Image")
+        self.save_button.clicked.connect(self.save_processed_image)
+        self.save_button.setEnabled(False)  # Disable until image is processed
+        center_layout.addWidget(self.save_button)
         
         center_layout.addStretch()
         
@@ -85,7 +99,6 @@ class ImageProcessingTab(QWidget):
         elif method == "Grayscale":
             processed = cv2.cvtColor(self.original_image, cv2.COLOR_BGR2GRAY)
         elif method == "Gaussian Blur":
-            # Convert percentage to kernel size (odd numbers from 1 to 31)
             kernel_size = 15  # Example fixed kernel size
             processed = cv2.GaussianBlur(self.original_image, (kernel_size, kernel_size), 0)
         elif method == "Edge Detection":
@@ -97,6 +110,39 @@ class ImageProcessingTab(QWidget):
         
         self.current_image = processed
         self.display_image(processed, self.processed_label)
+        self.save_button.setEnabled(True)  # Enable save button after processing
+    
+    def save_processed_image(self):
+        if self.current_image is None:
+            return
+            
+        method = self.method_combo.currentText()
+        timestamp = cv2.getTickCount()  # Use as unique identifier
+        filename = f"{method.lower().replace(' ', '_')}_{timestamp}.png"
+        filepath = os.path.join(self.output_dir, filename)
+        
+        try:
+            if len(self.current_image.shape) == 2:  # Grayscale
+                cv2.imwrite(filepath, self.current_image)
+            else:  # Color
+                cv2.imwrite(filepath, self.current_image)
+            
+            # Show success message
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Icon.Information)
+            msg.setWindowTitle("Success")
+            msg.setText("Image Saved Successfully!")
+            msg.setInformativeText(f"Saved as: {filename}\nLocation: {self.output_dir}")
+            msg.exec()
+            
+        except Exception as e:
+            # Show error message if save fails
+            error_msg = QMessageBox()
+            error_msg.setIcon(QMessageBox.Icon.Critical)
+            error_msg.setWindowTitle("Error")
+            error_msg.setText("Failed to save image!")
+            error_msg.setInformativeText(str(e))
+            error_msg.exec()
     
     def display_image(self, image, label):
         if len(image.shape) == 2:  # Grayscale
