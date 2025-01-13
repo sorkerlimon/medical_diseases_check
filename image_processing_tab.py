@@ -173,21 +173,14 @@ class ImageProcessingTab(QWidget):
             result = self.db_manager.cursor.fetchone()
             print(result)
             if result and result[0]:
-                # Extract the image name from the database
-                image_name = result[0]  # This should be just the filename like 'patient_0.jpg'
-
-                # Dynamically construct paths
-                current_dir = os.getcwd()  # Get the current working directory
-                # direct_path = os.path.join(current_dir, image_name)  # Check in the current directory
-                # print(direct_path)
-                alternate_path = os.path.join(current_dir,  'patient_images', image_name)  # Check in patient_images directory
+                image_name = result[0]  
+                current_dir = os.getcwd()  
+                alternate_path = os.path.join(current_dir,  'patient_images', image_name) 
                 print(alternate_path)
 
                 # Determine the final path
                 if os.path.exists(alternate_path):
                     final_path = alternate_path
-                # elif os.path.exists(alternate_path):
-                #     final_path = alternate_path
                 else:
                     final_path = None
 
@@ -203,6 +196,8 @@ class ImageProcessingTab(QWidget):
 
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to load patient image: {str(e)}")
+
+            
     def load_image(self):
         file_name, _ = QFileDialog.getOpenFileName(self, "Open Image", "", 
                                                  "Image Files (*.png *.jpg *.jpeg *.bmp)")
