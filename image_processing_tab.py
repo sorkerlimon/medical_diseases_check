@@ -1,5 +1,3 @@
-# image_processing_tab.py
-
 import cv2
 import numpy as np
 import os
@@ -7,12 +5,14 @@ from PyQt6.QtWidgets import (QWidget, QHBoxLayout, QVBoxLayout, QPushButton,
                             QLabel, QGroupBox, QComboBox, QFileDialog, QMessageBox)
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QImage, QPixmap
+from database import DatabaseManager
 
 class ImageProcessingTab(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.original_image = None
         self.current_image = None
+        self.db_manager = DatabaseManager()
         self.setup_ui()
         
         # Create processed_images directory if it doesn't exist
@@ -42,6 +42,26 @@ class ImageProcessingTab(QWidget):
         # Center panel (Controls)
         center_panel = QGroupBox("Processing Controls")
         center_layout = QVBoxLayout(center_panel)
+        
+        # Database Connection Button
+        self.db_connect_button = QPushButton("Connect to Database")
+        self.db_connect_button.clicked.connect(self.connect_database)
+        self.db_connect_button.setStyleSheet("""
+            QPushButton { background-color: #f0f0f0; }
+            QPushButton:hover { background-color: #e0e0e0; }
+        """)
+        center_layout.addWidget(self.db_connect_button)
+
+        # Patient Selection
+        patient_selection_group = QGroupBox("Patient Selection")
+        patient_selection_layout = QVBoxLayout(patient_selection_group)
+        
+        self.patient_combo = QComboBox()
+        self.patient_combo.setEnabled(False)  # Disabled until database is connected
+        self.patient_combo.currentIndexChanged.connect(self.on_patient_selected)
+        patient_selection_layout.addWidget(self.patient_combo)
+        
+        center_layout.addWidget(patient_selection_group)
         
         # Processing method selection
         center_layout.addWidget(QLabel("Processing Method:"))
@@ -79,7 +99,110 @@ class ImageProcessingTab(QWidget):
         main_layout.addWidget(left_panel)
         main_layout.addWidget(center_panel)
         main_layout.addWidget(right_panel)
-    
+
+    def connect_database(self):
+        """Handle database connection and show appropriate message"""
+        if self.db_manager.connect():
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Icon.Information)
+            msg.setWindowTitle("Database Connection")
+            msg.setText("Successfully connected to database!")
+            msg.setInformativeText("Healthcare database is ready to use.")
+            msg.exec()
+            
+            # Update button appearance to show connected state
+            self.db_connect_button.setStyleSheet("""
+                QPushButton { 
+                    background-color: #90EE90; 
+                    border: 1px solid #006400;
+                }
+                QPushButton:hover { 
+                    background-color: #98FB98; 
+                }
+            """)
+            self.db_connect_button.setText("Database Connected")
+            self.db_connect_button.setEnabled(False)
+            
+            # Enable and populate patient dropdown
+            self.populate_patient_dropdown()
+            self.patient_combo.setEnabled(True)
+        else:
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Icon.Critical)
+            msg.setWindowTitle("Database Connection Error")
+            msg.setText("Failed to connect to database!")
+            msg.setInformativeText("Please check if the database file exists and try again.")
+            msg.exec()
+
+    def populate_patient_dropdown(self):
+        """Populate the patient dropdown with IDs from database"""
+        try:
+            self.patient_combo.clear()
+            self.patient_combo.addItem("Select Patient ID", None)  # Default option
+            
+            # Get patient IDs and names from database
+            self.db_manager.cursor.execute("SELECT patient_id, patient_name FROM patients")
+            patients = self.db_manager.cursor.fetchall()
+            
+            for patient_id, patient_name in patients:
+                # Display both ID and name in dropdown
+                self.patient_combo.addItem(f"ID: {patient_id} - {patient_name}", patient_id)
+                
+        except Exception as e:
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Icon.Critical)
+            msg.setWindowTitle("Error")
+            msg.setText("Failed to load patient data!")
+            msg.setInformativeText(str(e))
+            msg.exec()
+
+    def on_patient_selected(self, index):
+        """Handle patient selection from dropdown"""
+        if index <= 0:  # Skip if default "Select Patient ID" is selected
+            return
+
+        patient_id = self.patient_combo.currentData()
+        try:
+            # Get patient image name from the database
+            self.db_manager.cursor.execute("""
+                SELECT patient_image 
+                FROM patients 
+                WHERE patient_id = ?
+            """, (patient_id,))
+            
+            result = self.db_manager.cursor.fetchone()
+            print(result)
+            if result and result[0]:
+                # Extract the image name from the database
+                image_name = result[0]  # This should be just the filename like 'patient_0.jpg'
+
+                # Dynamically construct paths
+                current_dir = os.getcwd()  # Get the current working directory
+                # direct_path = os.path.join(current_dir, image_name)  # Check in the current directory
+                # print(direct_path)
+                alternate_path = os.path.join(current_dir,  'patient_images', image_name)  # Check in patient_images directory
+                print(alternate_path)
+
+                # Determine the final path
+                if os.path.exists(alternate_path):
+                    final_path = alternate_path
+                # elif os.path.exists(alternate_path):
+                #     final_path = alternate_path
+                else:
+                    final_path = None
+
+                # Handle the resolved path
+                if final_path:
+                    self.original_image = cv2.imread(final_path)
+                    self.display_image(self.original_image, self.original_label)
+                    self.process_image()
+                else:
+                    QMessageBox.warning(self, "Warning", f"Patient image file '{image_name}' not found in either directory!")
+            else:
+                QMessageBox.information(self, "Information", "No image associated with this patient.")
+
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to load patient image: {str(e)}")
     def load_image(self):
         file_name, _ = QFileDialog.getOpenFileName(self, "Open Image", "", 
                                                  "Image Files (*.png *.jpg *.jpeg *.bmp)")
@@ -158,3 +281,7 @@ class ImageProcessingTab(QWidget):
         pixmap = QPixmap.fromImage(q_image)
         scaled_pixmap = pixmap.scaled(label.size(), Qt.AspectRatioMode.KeepAspectRatio)
         label.setPixmap(scaled_pixmap)
+
+    def __del__(self):
+        if hasattr(self, 'db_manager'):
+            self.db_manager.close()
