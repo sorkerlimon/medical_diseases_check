@@ -32,6 +32,7 @@ class DatabaseManager:
                 patient_gender TEXT,
                 patient_contact TEXT,
                 patient_image TEXT,
+                patient_status TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         ''')
