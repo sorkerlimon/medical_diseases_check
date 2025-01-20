@@ -1,0 +1,138 @@
+// Get the list of zonesets, ignoring any duplicate commas
+                    def zonesets = params.ZoneSet.trim().split(',').findAll{ it != '' }
+                    def slackChannel = (env.BRANCH_NAME == "main") ? "gravity-ext" : "test-slack-cc"
+                    def gravityGoalie = (env.BRANCH_NAME == "main") ? "<!subteam^xxxxxxxxx>" : "(gravity-goalie)"
+                    def dataOpsGoalie = (env.BRANCH_NAME == "main") ? "<!subteam^zzzzzzzz>" : "(dataops-goalie)"
+
+                    try {
+                        response = postToChat(
+                            channel: slackChannel,
+                            message: " ⚪ <$BUILD_URL|[Post-Scaleup Health Check ${ZoneSet.toUpperCase()}, $BUILD_NUMBER]> Scaleup checks have started.",
+                            username: "Post-Scaleup Health Check"
+                        )
+
+                        // Get the list of queue names, ignoring any duplicate commas
+                        def cliArguments = [
+                            "--zonesets ${zonesets.join(' ')}",
+                        ].findAll{ it != null }.join(' ')
+
+
+                        // Perform AWS authentication and run command.
+                        withCredentials([
+                            [
+                                $class: 'AmazonWebServicesCredentialsBinding',
+                                credentialsId: getJenkinsCredentialByAWSAccount(account: params.Account),
+                                accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+                                secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
+                            ],
+                        ]) {
+                            def image = docker.build("post-scaleup:latest", "--file PostScaleup/Dockerfile .")
+                            def region = "us-east-1"
+                            def days = "3"
+
+                            image.inside {
+                                output2 = sh(
+                                    script: "python ./PostScaleup/get_phd_events.py --region ${region} --days ${days}",
+                                    returnStdout: true,
+                                )
+
+                                output = sh(
+                                    script: "python ./PostScaleup/get-morning-status.py $cliArguments",
+                                    returnStdout: true,
+                                )
+                            }
+                        }
+
+                        println(output2)
+                        formattedOutput = parseAndFormat(output)
+                        formattedOutput2 = parseAndFormatForEvents(output2)
+                        println(formattedOutput2)
+
+                        if (formattedOutput.contains("Scaling not completed:")) {
+                            ZONE_SET_ISSUES = 'true'
+                            println("State machine failed")
+                        }
+
+                        def text = new URL('https://git.com/()
+                        def slurped = new JsonSlurper().parseText(text)
+                        def RegionNames = findZones(params.Account,params.ZoneSet,slurped)
+
+                        def jobNames = []
+                        def failedJobs = []
+                        def suffix = "solr-scaler"
+                        def allJobs = Jenkins.instance.getAllItems()
+
+                        allJobs.each { job ->
+                            // Check if job name starts with Account, ends with suffix, and contains any of the RegionNames
+                            if (job.name.startsWith(params.Account) && job.name.endsWith(suffix) && RegionNames.any { region -> job.name.contains(region) }) {
+                                jobNames.add(job.name)
+                            } else if (job.fullName.startsWith("diagnostic-hub-all-in-one/main")) {
+                                jobNames.add(job.fullName)
+                            }
+                        }
+
+
+                        if (jobNames.isEmpty()) {
+                            println("No jobs found matching the pattern.")
+                        } else {
+                            jobNames.each { jobName ->
+                                def job = Jenkins.instance.getItemByFullName(jobName)
+                                if (job) {
+                                    println("Checking Job: ${job.fullName}")
+
+                                    def lastBuild = job.getLastBuild()
+                                    if (lastBuild && lastBuild.result == hudson.model.Result.FAILURE) {
+                                        failedJobs << [name: jobName, url: lastBuild.absoluteUrl, buildnumber: lastBuild.number]
+                                    }
+                                } else {
+                                    println("Job not found: $jobName")
+                                }
+                            }
+
+                        }
+
+                        if (failedJobs.isEmpty() && ZONE_SET_ISSUES == 'false') {
+                            println("No failed jobs found.")
+
+                            postToChat(
+                                channel: response.channel,
+                                messageId: response.messageId,
+                                message: ":green_circle: <$BUILD_URL|[Post-Scaleup Health Check ${ZoneSet.toUpperCase()}, $BUILD_NUMBER]> Scaleup checks have succeeded.",
+                                username: "Post-Scaleup Health Check"
+                            )
+
+                        } else {
+                            ZONE_SET_ISSUES = 'true'  //Set to true if any jobs failed
+
+                            postToChat(
+                                channel: response.channel,
+                                messageId: response.messageId,
+                                message: "🔴 <$BUILD_URL|[Post-Scaleup Health Check ${ZoneSet.toUpperCase()}, $BUILD_NUMBER]> Scaleup checks have failed.",
+                                username: "Post-Scaleup Health Check"
+                            )
+                            failedJobs.each {
+                                def isSolrScaler = it.name.contains("solr-scaler")
+                                def isDiagHub = it.name.contains("diagnostic-hub-all-in-one/main")
+
+                                String message = ""
+                                if (isSolrScaler) {
+                                    message = "🔴 ${dataOpsGoalie} <${it.url}|[${it.name},${it.buildnumber}]> Job Failed"
+                                } else if (isDiagHub) {
+                                    println("diagnostic-hub-all-in-one failed")
+                                    message = "🔴 <${it.url}|[${it.name},${it.buildnumber}]> Job Failed"
+                                } else {
+                                    message = "🔴 <${it.url}|[${it.name},${it.buildnumber}]> Job Failed"
+                                }
+
+                                postToChat(
+                                    channel: response.channel,
+                                    thread: response.thread,
+                                    message: message,
+                                    username: "Post-Scaleup Health Check"
+                                )
+                            }
+                        }
+
+Reply
+
+
